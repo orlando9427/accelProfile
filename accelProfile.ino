@@ -47,7 +47,7 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("1-Izq. ");
         Serial.println(uS);
-        motorLeft.moveForward(uS, 9000);
+        motorLeft.moveForward(uS, 1200);
         //startMotor();
       }
       break;
@@ -57,7 +57,7 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("2-Der. ");
         Serial.println(uS);
-        motorRight.moveForward(uS, 9000);
+        motorRight.moveForward(uS, 1200);
       }
       break;
  
@@ -66,7 +66,7 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("3-Der. ");
         Serial.println(uS);
-        motorLeft.moveBackward(uS, 9000);
+        motorLeft.moveBackward(uS, 1200);
       }
       break;
       
@@ -75,7 +75,7 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("4-Der. ");
         Serial.println(uS);
-        motorRight.moveBackward(uS, 9000);
+        motorRight.moveBackward(uS, 1200);
       }
       break;
 
@@ -84,8 +84,8 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("5-Atr. ");
         Serial.println(uS);
-        motorRight.moveForward(uS, 8000);
-        motorLeft.moveForward(uS, 8000);
+        motorRight.moveForward(uS, 6000);
+        motorLeft.moveForward(uS, 6000);
       }
       break;
       
@@ -94,8 +94,8 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("6-Ade. ");
         Serial.println(uS);
-        motorRight.moveBackward(uS, 8000);
-        motorLeft.moveBackward(uS, 8000);
+        motorRight.moveBackward(uS, 6000);
+        motorLeft.moveBackward(uS, 6000);
         //startMotor();
       }
       break;

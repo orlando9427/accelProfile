@@ -88,10 +88,6 @@ void AccelProfile::moveForward(int vel, int xtime) {
   cli();
   digitalWrite(motor[this->motorIndex].pinM1, HIGH);
   digitalWrite(motor[this->motorIndex].pinM2, LOW);
-  Serial.print("M1: ");
-  Serial.println(motor[this->motorIndex].pinM1);
-  Serial.print("M2: ");
-  Serial.println(motor[this->motorIndex].pinM2);
   
 	movePlanner(vel, (xtime / 100));
   sei();
@@ -101,10 +97,6 @@ void AccelProfile::moveBackward(int vel, int xtime) {
   cli();
   digitalWrite(motor[this->motorIndex].pinM2, HIGH);
   digitalWrite(motor[this->motorIndex].pinM1, LOW);
-  Serial.print("M1: ");
-  Serial.println(motor[this->motorIndex].pinM1);
-  Serial.print("M2: ");
-  Serial.println(motor[this->motorIndex].pinM2);
   
 	movePlanner(vel, (xtime / 100));
   sei();
