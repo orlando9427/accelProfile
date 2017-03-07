@@ -16,10 +16,11 @@ ISR(TIMER1_COMPA_vect) {
 		switch (motor[motorTurn].profile.isAccel) {
 			case ISSTOP:
 				digitalWrite(motor[motorTurn].pinPWM, LOW);
+        motor[motorTurn].profile.state = 0;
 				break;
 
 			case ISACCEL:
-        analogWrite(motor[motorTurn].pinPWM, (int)motor[motorTurn].profile.vel*sin(dectoRad((100 * motor[motorTurn].profile.state) / motor[motorTurn].profile.accelTime[0])));
+        analogWrite(motor[motorTurn].pinPWM, (int)(motor[motorTurn].profile.vel*sin(dectoRad((100 * motor[motorTurn].profile.state) / motor[motorTurn].profile.accelTime[0]))));
         motor[motorTurn].profile.state += stepTimer;
         if (motor[motorTurn].profile.state >= motor[motorTurn].profile.accelTime[0])
           motor[motorTurn].profile.isAccel = ISSTEADY;
@@ -27,19 +28,19 @@ ISR(TIMER1_COMPA_vect) {
 
       case ISSTEADY:
         analogWrite(motor[motorTurn].pinPWM, motor[motorTurn].profile.vel);
-        motor[motorTurn].profile.state += stepTimer;
+        motor[motorTurn].profile.state += stepTimer*2;
         if (motor[motorTurn].profile.state >= motor[motorTurn].profile.accelTime[1])
           motor[motorTurn].profile.isAccel = ISDECCA;
       	break;
 
       case ISDECCA:
-        analogWrite(motor[motorTurn].pinPWM, (int)motor[motorTurn].profile.vel*sin(dectoRad(100 - (100 * (motor[motorTurn].profile.state - motor[motorTurn].profile.accelTime[1]) / motor[motorTurn].profile.accelTime[0]))));
+        analogWrite(motor[motorTurn].pinPWM, (int)(motor[motorTurn].profile.vel*sin(dectoRad(100 - (100 * (motor[motorTurn].profile.state - motor[motorTurn].profile.accelTime[1]) / motor[motorTurn].profile.accelTime[0])))));
         motor[motorTurn].profile.state += stepTimer;
         if (motor[motorTurn].profile.state >= motor[motorTurn].profile.accelTime[2])
           motor[motorTurn].profile.isAccel = ISSTOP;
           break;
-    }
-    
+    }//*/
+
     motorTurn++;
     if (motorTurn >= MAXMOTOR)
       motorTurn = 0;
@@ -56,10 +57,11 @@ AccelProfile::AccelProfile(uint8_t pinForward, uint8_t pinBackward, uint8_t pinP
 
   motor[this->motorIndex].pinM1 = this->xforward;
   motor[this->motorIndex].pinM2 = this->xbackward;
-
-	pinMode(this->xforward, OUTPUT);
-	pinMode(this->xbackward, OUTPUT);
-  pinMode(this->xPWM, OUTPUT);
+  motor[this->motorIndex].pinPWM = this->xPWM;
+  
+	pinMode(pinForward, OUTPUT);
+	pinMode(pinBackward, OUTPUT);
+  pinMode(pinPWM, OUTPUT);
 }
 
 void AccelProfile::prepareTimer() {
@@ -67,6 +69,7 @@ void AccelProfile::prepareTimer() {
 	//Clear both registers
 	TCCR1A = 0;
 	TCCR1B = 0;
+  TCNT1  = 0;
 
 	//Set CTC mode
 	TCCR1B |= (1 << WGM12);
@@ -76,37 +79,51 @@ void AccelProfile::prepareTimer() {
 	TCCR1B |= (1 << CS12);
 
 	//Set Compare Match Register to desired counts
-	OCR1A = 31249;	
+	OCR1A = 3124;	
 	//Enable timer compare interrupt
 	TIMSK1 |= (1 << OCIE1A);
 }
 
 void AccelProfile::moveForward(int vel, int xtime) {
+  cli();
   digitalWrite(motor[this->motorIndex].pinM1, HIGH);
   digitalWrite(motor[this->motorIndex].pinM2, LOW);
-	movePlanner(this->motorIndex, this->xPWM, vel, xtime / 100);
+  Serial.print("M1: ");
+  Serial.println(motor[this->motorIndex].pinM1);
+  Serial.print("M2: ");
+  Serial.println(motor[this->motorIndex].pinM2);
+  
+	movePlanner(vel, (xtime / 100));
+  sei();
 }
 
 void AccelProfile::moveBackward(int vel, int xtime) {
+  cli();
   digitalWrite(motor[this->motorIndex].pinM2, HIGH);
   digitalWrite(motor[this->motorIndex].pinM1, LOW);
-	movePlanner(this->motorIndex, this->xPWM, vel, xtime / 100);
+  Serial.print("M1: ");
+  Serial.println(motor[this->motorIndex].pinM1);
+  Serial.print("M2: ");
+  Serial.println(motor[this->motorIndex].pinM2);
+  
+	movePlanner(vel, (xtime / 100));
+  sei();
 }
 
-void AccelProfile::movePlanner(uint8_t index, int xdirection, int vel, int xtime) {
+void AccelProfile::movePlanner(int vel, int xtime) {
 	//Disable interrupts
-	cli();
+	//cli();
 
 	//Stablish data for motor
 	//motor[index].pinPWM = xdirection;
-	motor[index].profile.vel = vel;
-	motor[index].profile.state = 0;
-	motor[index].profile.isAccel = ISACCEL;
+	motor[this->motorIndex].profile.vel = vel;
+	motor[this->motorIndex].profile.state = 0;
+	motor[this->motorIndex].profile.isAccel = ISACCEL;
 
-	motor[index].profile.accelTime[0] = this->accelTimePlanner(xtime);
-	motor[index].profile.accelTime[1] = xtime - motor[index].profile.accelTime[0];
-	motor[index].profile.accelTime[2] = xtime;
-	sei();
+	motor[this->motorIndex].profile.accelTime[0] = this->accelTimePlanner(xtime);
+	motor[this->motorIndex].profile.accelTime[1] = xtime - motor[this->motorIndex].profile.accelTime[0];
+	motor[this->motorIndex].profile.accelTime[2] = xtime;
+	//sei();
 
 	//Serial.println(motor[index].perfil.accelTime[0]);
 }

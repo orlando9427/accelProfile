@@ -2,12 +2,12 @@
 
 #define MAX_US 256
 #define MIN_US 0
-#define PWM1 3
-#define PWM2 11
-#define M1L 4
-#define M1R 5
-#define M2L 7
-#define M2R 8
+#define PWMA 3
+#define PWMB 11
+#define AIN1 5
+#define AIN2 4
+#define BIN1 7
+#define BIN2 8
 
 struct structOrder {
   char idOrder;
@@ -15,8 +15,8 @@ struct structOrder {
 };
 
 int iPos;
-AccelProfile motorLeft(M1L, M1R, PWM1, 4);
-AccelProfile motorRight(M2L, M2R, PWM2, 4);
+AccelProfile motorLeft(AIN1, AIN2, PWMA, 4);
+AccelProfile motorRight(BIN1, BIN2, PWMB, 4);
 
 
 void setup() {
@@ -58,7 +58,6 @@ void loop() {
         Serial.print("2-Der. ");
         Serial.println(uS);
         motorRight.moveForward(uS, 9000);
-        //startMotor();
       }
       break;
  
@@ -67,18 +66,16 @@ void loop() {
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("3-Der. ");
         Serial.println(uS);
-        motorLeft.moveBackward(uS, 2000);
-        //startMotor();
+        motorLeft.moveBackward(uS, 9000);
       }
       break;
+      
     case '4':
       uS = Order.dataOrder.toInt();
       if ((uS > MIN_US) and (uS < MAX_US)) {
         Serial.print("4-Der. ");
         Serial.println(uS);
-        //digitalWrite(M2R, HIGH);
-        motorRight.moveBackward(uS, 2000);
-        //startMotor();
+        motorRight.moveBackward(uS, 9000);
       }
       break;
 
@@ -89,7 +86,6 @@ void loop() {
         Serial.println(uS);
         motorRight.moveForward(uS, 8000);
         motorLeft.moveForward(uS, 8000);
-        //startMotor();
       }
       break;
       
@@ -106,15 +102,18 @@ void loop() {
 
     case '7':
       Serial.println("Prueba");
-      probeMotor();
+      pinMode(PWMB, OUTPUT);
+      analogWrite(PWMB, (int)random()*255);
+      pinMode(PWMA, OUTPUT);
+      analogWrite(PWMA, (int)random()*255);
   }
   //Serial.flush();
   delay(1000);
 }
 
-void probeMotor(){
-  analogWrite(M1L, 0);
-  analogWrite(M2L, 0);
+/*void probeMotor(){
+  analogWrite(AIN1, 0);
+  analogWrite(AIN2, 0);
   for (iPos = MIN_US; iPos <= MAX_US; iPos += 16) { // goes from 0 degrees to 180 degrees
     // in steps of 1 degree
     analogWrite(M1R, iPos);
@@ -129,5 +128,5 @@ void probeMotor(){
     analogWrite(M2R, iPos);
     delay(500);                       // waits 15ms for the servo to reach the position
   }
-}
+}*/
 

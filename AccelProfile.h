@@ -42,5 +42,5 @@ class AccelProfile {
 		int xpart, xforward, xbackward, xPWM, motorIndex;
 
 		int accelTimePlanner(int xtime);
-		void movePlanner(uint8_t index, int xdirection, int vel, int xtime);
+		void movePlanner(int vel, int xtime);
 };
