@@ -14,30 +14,32 @@
 //Steps timer1
 #define MAXMOTOR 2
 #define steps 2
-#define stepTimer steps / 2
+#define stepTimer (steps / 2)
 
 
-typedef struct {
+typedef volatile struct {
 	long accelTime[3];
 	int vel;
 	long state;
 	int isAccel;
 } profile_t;
 
-typedef struct {
+typedef volatile struct {
 	profile_t profile;
-	uint8_t pin;
+	uint8_t pinPWM;
+  uint8_t pinM1;
+  uint8_t pinM2;
 } motor_t;
 
 class AccelProfile {
 	public:
-		AccelProfile(uint8_t pinForward, uint8_t pinBackward, uint8_t part);
+		AccelProfile(uint8_t pinForward, uint8_t pinBackward, uint8_t pinPWM,  uint8_t part);
 
 		void prepareTimer();
 		void moveForward(int vel, int xtime);
 		void moveBackward(int vel, int xTime);
 	private:
-		int xpart, xforward, xbackward, motorIndex;
+		int xpart, xforward, xbackward, xPWM, motorIndex;
 
 		int accelTimePlanner(int xtime);
 		void movePlanner(uint8_t index, int xdirection, int vel, int xtime);

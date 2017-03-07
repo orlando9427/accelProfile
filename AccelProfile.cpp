@@ -1,12 +1,12 @@
 #include "AccelProfile.h"
 
-volatile motor_t motor[2];
+static motor_t motor[MAXMOTOR];
 uint8_t motorCount = 0;
-volatile int stepCount = 0;
+volatile uint8_t stepCount = 0;
 volatile uint8_t motorTurn = 0;
 
 float dectoRad(long dec) {
-	return dec * (M_PI / 2) / 100;
+	return dec * (PI / 2) / 100;
 }
 
 ISR(TIMER1_COMPA_vect) {
@@ -15,31 +15,31 @@ ISR(TIMER1_COMPA_vect) {
 	else {
 		switch (motor[motorTurn].profile.isAccel) {
 			case ISSTOP:
-				digitalWrite(motor[motorTurn].pin, LOW);
+				digitalWrite(motor[motorTurn].pinPWM, LOW);
 				break;
 
 			case ISACCEL:
-        analogWrite(motor[motorCount].pin, (int)motor[motorCount].profile.vel*sin(dectoRad((100 * motor[motorCount].profile.state) / motor[motorCount].profile.accelTime[0])));
-        motor[motorCount].profile.state += stepTimer;
-        if (motor[motorCount].profile.state >= motor[motorCount].profile.accelTime[0])
-          motor[motorCount].profile.isAccel = ISSTEADY;
+        analogWrite(motor[motorTurn].pinPWM, (int)motor[motorTurn].profile.vel*sin(dectoRad((100 * motor[motorTurn].profile.state) / motor[motorTurn].profile.accelTime[0])));
+        motor[motorTurn].profile.state += stepTimer;
+        if (motor[motorTurn].profile.state >= motor[motorTurn].profile.accelTime[0])
+          motor[motorTurn].profile.isAccel = ISSTEADY;
         break;
 
       case ISSTEADY:
-        analogWrite(motor[motorCount].pin, motor[motorCount].profile.vel);
-        motor[motorCount].profile.state += stepTimer;
-        if (motor[motorCount].profile.state >= motor[motorCount].profile.accelTime[1])
-          motor[motorCount].profile.isAccel = ISDECCA;
+        analogWrite(motor[motorTurn].pinPWM, motor[motorTurn].profile.vel);
+        motor[motorTurn].profile.state += stepTimer;
+        if (motor[motorTurn].profile.state >= motor[motorTurn].profile.accelTime[1])
+          motor[motorTurn].profile.isAccel = ISDECCA;
       	break;
 
       case ISDECCA:
-        analogWrite(motor[motorCount].pin, (int)motor[motorCount].profile.vel*sin(dectoRad(100 - (100 * (motor[motorCount].profile.state - motor[motorCount].profile.accelTime[1]) / motor[motorCount].profile.accelTime[0]))));
-        motor[motorCount].profile.state += stepTimer;
-        if (motor[motorCount].profile.state >= motor[motorCount].profile.accelTime[2])
-          motor[motorCount].profile.isAccel = ISSTOP;
+        analogWrite(motor[motorTurn].pinPWM, (int)motor[motorTurn].profile.vel*sin(dectoRad(100 - (100 * (motor[motorTurn].profile.state - motor[motorTurn].profile.accelTime[1]) / motor[motorTurn].profile.accelTime[0]))));
+        motor[motorTurn].profile.state += stepTimer;
+        if (motor[motorTurn].profile.state >= motor[motorTurn].profile.accelTime[2])
+          motor[motorTurn].profile.isAccel = ISSTOP;
           break;
     }
-
+    
     motorTurn++;
     if (motorTurn >= MAXMOTOR)
       motorTurn = 0;
@@ -47,14 +47,19 @@ ISR(TIMER1_COMPA_vect) {
 	}
 }
 
-AccelProfile::AccelProfile(byte pinForward, byte pinBackward, byte part) {
+AccelProfile::AccelProfile(uint8_t pinForward, uint8_t pinBackward, uint8_t pinPWM, uint8_t part) {
 	this->xforward = pinForward;
 	this->xbackward = pinBackward;
+  this->xPWM = pinPWM;
 	this->xpart = part;
 	this->motorIndex = motorCount++;
 
+  motor[this->motorIndex].pinM1 = this->xforward;
+  motor[this->motorIndex].pinM2 = this->xbackward;
+
 	pinMode(this->xforward, OUTPUT);
 	pinMode(this->xbackward, OUTPUT);
+  pinMode(this->xPWM, OUTPUT);
 }
 
 void AccelProfile::prepareTimer() {
@@ -67,7 +72,7 @@ void AccelProfile::prepareTimer() {
 	TCCR1B |= (1 << WGM12);
 
 	//Set prescaler to 1024
-	TCCR1B |= (1 << CS10);
+	//TCCR1B |= (1 << CS10);
 	TCCR1B |= (1 << CS12);
 
 	//Set Compare Match Register to desired counts
@@ -77,19 +82,23 @@ void AccelProfile::prepareTimer() {
 }
 
 void AccelProfile::moveForward(int vel, int xtime) {
-	movePlanner(this->motorIndex, this->xforward, vel, xtime / 100);
+  digitalWrite(motor[this->motorIndex].pinM1, HIGH);
+  digitalWrite(motor[this->motorIndex].pinM2, LOW);
+	movePlanner(this->motorIndex, this->xPWM, vel, xtime / 100);
 }
 
 void AccelProfile::moveBackward(int vel, int xtime) {
-	movePlanner(this->motorIndex, this->xbackward, vel, xtime / 100);
+  digitalWrite(motor[this->motorIndex].pinM2, HIGH);
+  digitalWrite(motor[this->motorIndex].pinM1, LOW);
+	movePlanner(this->motorIndex, this->xPWM, vel, xtime / 100);
 }
 
-void AccelProfile::movePlanner(byte index, int xdirection, int vel, int xtime) {
+void AccelProfile::movePlanner(uint8_t index, int xdirection, int vel, int xtime) {
 	//Disable interrupts
 	cli();
 
 	//Stablish data for motor
-	motor[index].pin = xdirection;
+	//motor[index].pinPWM = xdirection;
 	motor[index].profile.vel = vel;
 	motor[index].profile.state = 0;
 	motor[index].profile.isAccel = ISACCEL;

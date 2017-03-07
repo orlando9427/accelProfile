@@ -2,10 +2,12 @@
 
 #define MAX_US 256
 #define MIN_US 0
-#define M1L 6
+#define PWM1 3
+#define PWM2 11
+#define M1L 4
 #define M1R 5
-#define M2L 10
-#define M2R 11
+#define M2L 7
+#define M2R 8
 
 struct structOrder {
   char idOrder;
@@ -13,13 +15,14 @@ struct structOrder {
 };
 
 int iPos;
-AccelProfile motorLeft(M1L, M1R, 4);
-AccelProfile motorRight(M2L, M2R, 4);
+AccelProfile motorLeft(M1L, M1R, PWM1, 4);
+AccelProfile motorRight(M2L, M2R, PWM2, 4);
 
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Hi!");
+  motorLeft.prepareTimer();
 }
 
 void loop() {
